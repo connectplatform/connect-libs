@@ -1,200 +1,86 @@
-# ConnectPlatform Libraries
+elibphonenumber
+===============
+[![Build Status](https://travis-ci.org/silviucpp/elibphonenumber.svg?branch=master)](https://travis-ci.org/silviucpp/elibphonenumber)
 
-> **Modernized, secure, and performant libraries for ConnectPlatform v8**
+Erlang port of [libphonenumber][1]
 
-This repository contains all modernized dependencies for ConnectPlatform, rewritten and optimized for:
-- **Erlang/OTP 26+** compatibility
-- **Modern C++17** standards  
-- **CMake 4.0+** build systems
-- **Enhanced security** and performance
-- **ConnectPlatform v8** multi-transport architecture
+## Notes
 
-## 📚 **Available Libraries**
+- This project is active. I'm doing updates very offen because I see the original author is no longer maintaining it.
+- Compatible with both `rebar` and `rebar3` or `hex`
+- To change the `libphonenumber` version modify in `rebar.config` the `TAG` argument sent to `make`
 
-### **🔢 libphonenumber**
-Modern phone number validation and formatting library.
-- **Status**: ✅ **Production Ready**
-- **Replaces**: `elibphonenumber` (legacy)
-- **Features**: 
-  - Google libphonenumber v8.13.27 integration
-  - Erlang/OTP 26 compatible
-  - CMake 4.0+ build system
-  - C++17 standards
-  - Comprehensive phone validation and formatting
+## Compile
 
-**Usage in rebar.config:**
-```erlang
-{deps, [
-  {connect_libphonenumber, {git, "https://github.com/connectplatform/connect-libs.git", 
-                          {dir, "libphonenumber"}, {branch, "main"}}}
-]}.
-```
+In order to compile you need to make sure all dependencies needed to build `libphonenumber` are already installed.
 
-### **🔄 Coming Soon**
+Next you can find a resume for each operating system where library was tested but in case you encounter problems you can 
+consult as well the documentation from building `libphonenumber` located [here][2]
 
-#### **mongodb** (Phase 2)
-Modern MongoDB driver for ConnectPlatform.
-- **Status**: 🔄 **Planned**
-- **Replaces**: `cocktail_mongo` (legacy)
+##### Ubuntu
 
-#### **json** (Phase 2)  
-High-performance JSON processing.
-- **Status**: 🔄 **Planned**
-- **Replaces**: `yaws_json2` (legacy)
+On the latest versions it's enough to do:
 
-#### **magic** (Phase 2)
-File type detection and MIME handling.
-- **Status**: 🔄 **Planned**
-- **Replaces**: `emagic` (legacy)
-
-#### **search** (Phase 3)
-Modern Elasticsearch client.
-- **Status**: 🔄 **Planned**
-- **Replaces**: `erlastic_search` (legacy)
-
-#### **http** (Phase 3)
-Modern HTTP client and server utilities.
-- **Status**: 🔄 **Planned**
-- **Replaces**: `smoothie` (legacy)
-
----
-
-## 🚀 **Quick Start**
-
-### **1. Add to your rebar.config**
-```erlang
-{minimum_otp_vsn, "26"}.
-
-{deps, [
-  % ConnectPlatform modernized libraries
-  {connect_libphonenumber, {git, "https://github.com/connectplatform/connect-libs.git",
-                          {dir, "libphonenumber"}, {branch, "main"}}}
-]}.
-```
-
-### **2. Build your project**
 ```bash
-export PATH="/usr/local/opt/erlang@26/bin:$PATH"
-rebar3 get-deps
-rebar3 compile
+sudo apt-get install cmake cmake-curses-gui libgtest-dev libre2-dev libicu-dev 
+sudo apt-get install libboost-dev libboost-thread-dev libboost-system-dev
+sudo apt-get install libprotobuf-dev protobuf-compiler
 ```
 
-### **3. Use in your Erlang code**
-```erlang
-%% Phone number validation example
-{ok, PhoneNumber} = phonenumber_util:parse(<<"+1234567890">>, <<"US">>),
-IsValid = phonenumber_util:is_valid_number(PhoneNumber).
-```
+In case you are using `Ubuntu 14.04` also follow the following steps in order to install `libre` and `cmake-3`:
 
----
-
-## 🔧 **Development**
-
-### **Prerequisites**
-- **Erlang/OTP 26+**
-- **rebar3 3.22+**
-- **CMake 4.0+** (for native libraries)
-- **Modern C++17 compiler**
-
-### **Building Individual Libraries**
 ```bash
-# Build libphonenumber
-cd libphonenumber
-make compile
+sudo apt-get remove cmake cmake-data
+sudo -E add-apt-repository -y ppa:george-edison55/cmake-3.x
+sudo -E apt-get update
+sudo apt-get install cmake
 
-# Run tests
-make test
-
-# Clean build
-make clean
+wget http://mt.archive.ubuntu.com/ubuntu/pool/universe/r/re2/libre2-1_20140304+dfsg-2_amd64.deb -O libre2-1.deb
+wget http://es.archive.ubuntu.com/ubuntu/pool/universe/r/re2/libre2-dev_20140304+dfsg-2_amd64.deb -O libre2-dev.deb
+sudo dpkg -i libre2*.deb
 ```
 
-### **Adding New Libraries**
-1. Create subdirectory: `mkdir new-library`
-2. Follow ConnectPlatform standards:
-   - Erlang/OTP 26+ compatibility
-   - Modern build system (rebar3, CMake 4.0+)
-   - Comprehensive tests
-   - Security best practices
-3. Update this README
-4. Submit pull request
+##### Debian 9 (Stretch)
 
----
+The same as for Ubuntu
 
-## 🌟 **Key Improvements**
+```bash
+sudo apt-get install cmake cmake-curses-gui libgtest-dev libre2-dev libicu-dev 
+sudo apt-get install libboost-dev libboost-thread-dev libboost-system-dev
+sudo apt-get install libprotobuf-dev protobuf-compiler
+```
 
-### **vs Legacy Dependencies**
-| Feature | Legacy | ConnectPlatform Libraries |
-|---------|---------|--------------------------|
-| **Erlang Version** | 13.x-25.x | **26+** |
-| **Build System** | Mixed/Outdated | **Standardized Modern** |
-| **C++ Standard** | C++11/14 | **C++17** |
-| **CMake** | 2.x/3.x | **4.0+** |
-| **Security** | Outdated | **Latest Patches** |
-| **Maintenance** | Abandoned | **Active Development** |
-| **Performance** | Legacy | **Optimized** |
-| **Testing** | Minimal | **Comprehensive** |
+##### CentOS 7
 
-### **ConnectPlatform v8 Integration**
-- **Multi-transport aware**: Internet, HF/VHF Radio, Bluetooth 5 Mesh
-- **Enhanced error handling** for unreliable transport conditions  
-- **Performance optimized** for tactical communication scenarios
-- **Security hardened** for sensitive communications
+Enable [EPEL][3] (for RE2 & gtest):
+```bash
+sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+```
 
----
+And install packages:
+```bash
+sudo yum install cmake git boost-devel gtest-devel libicu-devel protobuf-devel protobuf-compiler re2-devel
+```
 
-## 📋 **Roadmap**
+##### Mac Os
 
-### **Phase 1** (Current)
-- ✅ **libphonenumber** - Phone validation/formatting
-- ✅ **Modern build infrastructure**
-- ✅ **Erlang/OTP 26 compatibility**
+On `Mac OS` make sure you have `brew` installed and rebar will automatically install all necessary dependencies.
+ 
+## Get carrier for number
+    
+In order to do this make sure the application is started then use `phonenumber_to_carrier:carrier_for_number/2` method    
+    
+```erlang 
+application:ensure_all_started(elibphonenumber).
+phonenumber_to_carrier:carrier_for_number(<<"44743655551">>, <<"en">>).
+```    
 
-### **Phase 2** (Next)
-- 🔄 **mongodb** - Database connectivity
-- 🔄 **json** - JSON processing  
-- 🔄 **magic** - File type detection
+## Run the tests
 
-### **Phase 3** (Future)
-- 🔄 **search** - Elasticsearch client
-- 🔄 **http** - HTTP client/server
-- 🔄 **crypto** - Enhanced cryptography
-- 🔄 **compression** - Data compression utilities
+```bash
+rebar3 eunit
+```
 
----
-
-## 🤝 **Contributing**
-
-1. **Fork** the repository
-2. **Create feature branch**: `git checkout -b feature/new-library`
-3. **Follow standards**: Erlang/OTP 26+, modern build systems
-4. **Add tests**: Comprehensive test coverage required
-5. **Update docs**: README and inline documentation  
-6. **Submit PR**: Detailed description of changes
-
-### **Code Standards**
-- **Erlang**: OTP 26+ with modern practices
-- **C++**: C++17 standard, memory-safe patterns
-- **Build**: CMake 4.0+, rebar3 3.22+
-- **Tests**: EUnit, Common Test, PropEr
-- **Docs**: ExDoc, comprehensive READMEs
-
----
-
-## 📄 **License**
-
-Individual libraries maintain their original licenses where applicable.
-ConnectPlatform-specific code and modifications are licensed under MIT.
-
----
-
-## 🔗 **Links**
-
-- **ConnectPlatform**: [github.com/connectplatform](https://github.com/connectplatform)  
-- **Documentation**: [docs.connectplatform.dev](https://docs.connectplatform.dev)
-- **Issues**: [GitHub Issues](https://github.com/connectplatform/connect-libs/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/connectplatform/connect-libs/discussions)
-
----
-
-**ConnectPlatform v8 - Revolutionizing Multi-Transport Communication** 🚀 
+[1]: https://github.com/googlei18n/libphonenumber
+[2]: https://github.com/googlei18n/libphonenumber/blob/master/cpp/README
+[3]: https://fedoraproject.org/wiki/EPEL#Quickstart
