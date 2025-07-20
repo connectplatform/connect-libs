@@ -1,0 +1,24 @@
+{application, connect_search, [
+    {description, "ConnectPlatform Elasticsearch Client - Modern, OTP 27 Compatible"},
+    {maintainers, ["ConnectPlatform Team"]},
+    {licenses, ["MIT"]},
+    {links,[{"Github","https://github.com/connectplatform/connect-libs"}]},
+    {vsn, "1.0.0"},
+    {registered, [connect_search_sup, connect_search_pool_sup]},
+    {applications, [kernel, stdlib, ssl, crypto, hackney, poolboy]},
+    {mod, {connect_search_app, []}},
+    {env, [
+        {default_pool_size, 10},
+        {default_timeout, 5000},
+        {default_scheme, <<"http">>}
+    ]},
+
+    {files, [
+        "rebar.config",
+        "include/*.hrl",
+        "src/*.erl",
+        "test/*.erl",
+        "README*",
+        "LICENSE*"
+    ]}
+]}. 

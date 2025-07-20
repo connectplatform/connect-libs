@@ -1,0 +1,25 @@
+{application, connect_magic, [
+    {description, "ConnectPlatform File Magic - File Type Detection, OTP 27 Compatible"},
+    {maintainers, ["Sonoratek LLC <team@sonoratek.com>"]},
+    {licenses, ["MIT"]},
+    {links,[{"Github","https://github.com/connectplatform/connect-libs"}]},
+    {vsn, "1.0.0"},
+    {registered, [connect_magic_sup]},
+    {applications, [kernel, stdlib]},
+    {mod, {connect_magic_app, []}},
+    {env, [
+        {default_magic_db, "/usr/share/misc/magic"}
+    ]},
+
+    {files, [
+        "rebar.config",
+        "include/*.hrl",
+        "src/*.erl",
+        "test/*.erl",
+        "c_src/*.c",
+        "c_src/*.h",
+        "c_src/Makefile",
+        "README*",
+        "LICENSE*"
+    ]}
+]}. 
