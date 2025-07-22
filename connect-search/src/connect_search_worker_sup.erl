@@ -103,8 +103,7 @@ init([_Config]) ->
     SupFlags = #{
         strategy => simple_one_for_one,
         intensity => 10,
-        period => 60,
-        auto_shutdown => any_significant
+        period => 60
     },
     
     %% Worker template for dynamic workers
