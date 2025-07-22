@@ -124,53 +124,502 @@ Build Complexity:        Pure Erlang - no C++/NIFs
 ```bash
 rebar3 get-deps
 rebar3 compile
-rebar3 eunit  % Run tests to verify everything works
+rebar3 eunit  # Run tests to verify everything works
 ```
 
-### **3. Use in your Erlang code**
+### **3. Using Compiled BEAM Files in Your Application**
 
-#### **Phone Number Validation (Account IDs)**
+#### **Application Startup Pattern**
 ```erlang
-% Normalize phone numbers for account identification
-{ok, AccountId} = connect_phone:normalize_account_id(<<"+1-555-123-4567">>),
-% AccountId = <<"+15551234567">>
+% In your application startup (my_app.erl)
+start(_StartType, _StartArgs) ->
+    % Start dependencies in order
+    {ok, _} = application:ensure_all_started(connect_phone),
+    {ok, _} = application:ensure_all_started(connect_mongodb),  % If needed
+    {ok, _} = application:ensure_all_started(connect_search),   % If needed
+    {ok, _} = application:ensure_all_started(connect_magic),    % If needed
+    
+    % Start your main supervisor
+    my_app_sup:start_link().
+```
 
-% Get detailed phone information as JSON
-JsonInfo = connect_phone:get_phone_info_json(<<"+15551234567">>),
+#### **Runtime Configuration**
+```erlang
+% Configure applications at runtime
+application:set_env(connect_mongodb, connection_config, #{
+    host => <<"mongodb.example.com">>,
+    port => 27017,
+    pool_size => 10
+}),
 
-% Batch validate multiple numbers
+application:set_env(connect_search, elasticsearch_config, #{
+    host => <<"elasticsearch.example.com">>,
+    port => 9200,
+    pool_size => 5
+}).
+```
+
+---
+
+## 📖 **Complete API Documentation**
+
+### **📱 connect-phone: Phone Number Validation API**
+
+#### **Core Functions**
+```erlang
+%% Primary account ID normalization
+-spec normalize_account_id(PhoneNumber :: binary()) -> 
+    {ok, AccountId :: binary()} | {error, Reason :: term()}.
+
+%% Examples:
+{ok, <<"+15551234567">>} = connect_phone:normalize_account_id(<<"+1-555-123-4567">>),
+{ok, <<"+447700900123">>} = connect_phone:normalize_account_id(<<"0077009 00123">>),
+{error, invalid_phone_number} = connect_phone:normalize_account_id(<<"invalid">>).
+```
+
+#### **Enhanced Information Functions**
+```erlang
+%% Get detailed phone information as JSON
+-spec get_phone_info_json(PhoneNumber :: binary()) -> binary().
+
+%% Example:
+JsonData = connect_phone:get_phone_info_json(<<"+15551234567">>),
+% Returns: <<"{'account_id':'+15551234567','country':'US','valid':true}">>
+
+%% Check if number is valid for account ID
+-spec is_valid_account_id(PhoneNumber :: binary()) -> boolean().
+
+%% Example:
+true = connect_phone:is_valid_account_id(<<"+15551234567">>),
+false = connect_phone:is_valid_account_id(<<"invalid">>).
+```
+
+#### **Batch Operations**
+```erlang
+%% Validate multiple phone numbers efficiently  
+-spec batch_validate(PhoneNumbers :: [binary()]) -> 
+    [#{phone := binary(), valid := boolean(), account_id := binary() | undefined}].
+
+%% Example:
 Results = connect_phone:batch_validate([
     <<"+15551234567">>, 
     <<"+447700900123">>, 
-    <<"invalid">>
-]).
+    <<"invalid">>,
+    <<"+81312345678">>
+]),
+% Returns: [
+%   #{phone => <<"+15551234567">>, valid => true, account_id => <<"+15551234567">>},
+%   #{phone => <<"+447700900123">>, valid => true, account_id => <<"+447700900123">>},
+%   #{phone => <<"invalid">>, valid => false, account_id => undefined},
+%   #{phone => <<"+81312345678">>, valid => true, account_id => <<"+81312345678">>}
+% ]
+
+%% Normalize multiple numbers to account IDs
+-spec batch_normalize(PhoneNumbers :: [binary()]) -> 
+    [{ok, binary()} | {error, term()}].
 ```
 
-#### **MongoDB Operations**
+#### **Configuration & Statistics**
 ```erlang
-% Use MongoDB client with connection pooling
+%% Get processing statistics
+-spec get_stats() -> #{
+    total_processed := non_neg_integer(),
+    valid_numbers := non_neg_integer(),
+    invalid_numbers := non_neg_integer(),
+    countries_seen := [binary()]
+}.
+
+%% Get supported country codes
+-spec supported_countries() -> [binary()].
+
+%% Example:
+Stats = connect_phone:get_stats(),
+Countries = connect_phone:supported_countries(),
+% Returns: [<<"US">>, <<"GB">>, <<"DE">>, <<"FR">>, <<"JP">>, <<"AU">>, ...]
+```
+
+### **🗄️ connect-mongodb: MongoDB Client API**
+
+#### **Connection Management**
+```erlang
+%% Connect with configuration
+-spec connect(Config :: #{
+    host => binary(),
+    port => pos_integer(),
+    database => binary(),
+    pool_size => pos_integer(),
+    timeout => pos_integer()
+}) -> {ok, Connection :: atom()} | {error, term()}.
+
+%% Example:
+{ok, Connection} = connect_mongodb:connect(#{
+    host => <<"localhost">>,
+    port => 27017,
+    database => <<"myapp">>,
+    pool_size => 10,
+    timeout => 5000
+}).
+```
+
+#### **CRUD Operations (Synchronous)**
+```erlang
+%% Insert single document
+-spec insert_one(Collection :: binary(), Document :: map()) -> 
+    {ok, #{inserted_id := term()}} | {error, term()}.
+
+%% Insert multiple documents
+-spec insert_many(Collection :: binary(), Documents :: [map()]) -> 
+    {ok, #{inserted_ids := [term()]}} | {error, term()}.
+
+%% Find documents
+-spec find(Collection :: binary(), Filter :: map()) -> 
+    {ok, [map()]} | {error, term()}.
+-spec find(Collection :: binary(), Filter :: map(), Options :: map()) -> 
+    {ok, [map()]} | {error, term()}.
+
+%% Update operations
+-spec update_one(Collection :: binary(), Filter :: map(), 
+                Update :: map(), Options :: map()) -> 
+    {ok, #{matched_count := integer(), modified_count := integer()}} | {error, term()}.
+
+-spec update_many(Collection :: binary(), Filter :: map(), Update :: map()) -> 
+    {ok, #{matched_count := integer(), modified_count := integer()}} | {error, term()}.
+
+%% Delete operations  
+-spec delete_one(Collection :: binary(), Filter :: map()) -> 
+    {ok, #{deleted_count := integer()}} | {error, term()}.
+-spec delete_many(Collection :: binary(), Filter :: map()) -> 
+    {ok, #{deleted_count := integer()}} | {error, term()}.
+
+%% Examples:
 {ok, _} = connect_mongodb:insert_one(<<"users">>, #{
     account_id => <<"+15551234567">>,
-    name => <<"John">>,
-    email => <<"john@example.com">>
+    name => <<"John Doe">>,
+    email => <<"john@example.com">>,
+    created_at => erlang:system_time(second)
 }),
-{ok, Results} = connect_mongodb:find(<<"users">>, #{account_id => <<"+15551234567">>}).
+
+{ok, Users} = connect_mongodb:find(<<"users">>, #{
+    account_id => <<"+15551234567">>
+}),
+
+{ok, UpdateResult} = connect_mongodb:update_one(<<"users">>, 
+    #{account_id => <<"+15551234567">>},
+    #{<<"$set">> => #{last_login => erlang:system_time(second)}},
+    #{}
+).
 ```
 
-#### **File Type Detection**
+#### **Async Operations (High Performance)**
 ```erlang
-% Detect file types and get JSON output
-IsValid = connect_magic:is_valid(<<"example.pdf">>),
-Statistics = connect_magic:statistics(),
-JsonStats = connect_magic:statistics_json().
+%% Asynchronous operations return immediately
+-spec insert_one_async(Collection :: binary(), Document :: map(), 
+                      Callback :: fun()) -> {ok, reference()}.
+
+-spec find_async(Collection :: binary(), Filter :: map(), 
+                Callback :: fun()) -> {ok, reference()}.
+
+%% Example:
+Callback = fun(Result) -> 
+    io:format("Async result: ~p~n", [Result])
+end,
+{ok, Ref} = connect_mongodb:insert_one_async(<<"users">>, UserDoc, Callback).
 ```
 
-#### **Native OTP 27 Features**
+#### **GridFS (Large File Storage)**
 ```erlang
-% All libraries support OTP 27 native JSON
-Data = #{user => <<"john">>, phone => <<"+15551234567">>},
-JsonBinary = json:encode(Data),
-DecodedData = json:decode(JsonBinary).
+%% Upload file to GridFS
+-spec gridfs_upload(Filename :: binary(), Data :: binary()) -> 
+    {ok, #{file_id := term()}} | {error, term()}.
+-spec gridfs_upload(Filename :: binary(), Data :: binary(), Options :: map()) -> 
+    {ok, #{file_id := term()}} | {error, term()}.
+
+%% Download file from GridFS
+-spec gridfs_download(FileId :: term()) -> 
+    {ok, binary()} | {error, term()}.
+
+%% Stream large files
+-spec gridfs_stream_download(FileId :: term(), ChunkCallback :: fun()) -> 
+    {ok, #{chunks_processed := integer()}} | {error, term()}.
+
+%% Delete file
+-spec gridfs_delete(FileId :: term()) -> ok | {error, term()}.
+
+%% Example:
+{ok, #{file_id := FileId}} = connect_mongodb:gridfs_upload(
+    <<"document.pdf">>, 
+    FileBinary
+),
+{ok, Data} = connect_mongodb:gridfs_download(FileId).
+```
+
+### **🔍 connect-search: Elasticsearch Client API**
+
+#### **Connection Management**
+```erlang
+%% Connect to Elasticsearch
+-spec connect(Config :: #{
+    host => binary(),
+    port => pos_integer(),
+    scheme => binary(),
+    timeout => pos_integer(),
+    pool_size => pos_integer()
+}) -> {ok, Connection :: atom()} | {error, term()}.
+
+%% Example:
+{ok, Connection} = connect_search:connect(#{
+    host => <<"localhost">>,
+    port => 9200,
+    scheme => <<"http">>,
+    timeout => 5000,
+    pool_size => 10
+}).
+```
+
+#### **Document Operations**
+```erlang
+%% Index documents (synchronous)
+-spec index(Index :: binary(), DocId :: binary(), Document :: map()) -> 
+    {ok, #{index := binary(), id := binary(), result := binary()}} | {error, term()}.
+
+%% Get documents
+-spec get(Index :: binary(), DocId :: binary(), Options :: map()) -> 
+    {ok, #{index := binary(), id := binary(), found := boolean(), source := map()}} | 
+    {error, term()}.
+
+%% Search documents
+-spec search(Index :: binary(), Query :: map()) -> 
+    {ok, #{hits := map(), took := integer()}} | {error, term()}.
+
+%% Examples:
+{ok, _} = connect_search:index(<<"products">>, <<"prod123">>, #{
+    name => <<"Smartphone">>,
+    category => <<"electronics">>,
+    price => 299.99,
+    account_id => <<"+15551234567">>
+}),
+
+{ok, Doc} = connect_search:get(<<"products">>, <<"prod123">>, #{}),
+
+{ok, SearchResults} = connect_search:search(<<"products">>, #{
+    query => #{
+        match => #{category => <<"electronics">>}
+    }
+}).
+```
+
+#### **Async Operations**
+```erlang
+%% High-performance async operations
+-spec index_async(Index :: binary(), DocId :: binary(), 
+                 Document :: map(), Callback :: fun()) -> {ok, reference()}.
+
+-spec search_async(Index :: binary(), Query :: map(), 
+                  Callback :: fun()) -> {ok, reference()}.
+
+%% Example:
+Callback = fun({ok, Result}) -> 
+    io:format("Search completed: ~p hits~n", [maps:get(total, maps:get(hits, Result))])
+end,
+{ok, Ref} = connect_search:search_async(<<"products">>, SearchQuery, Callback).
+```
+
+### **🔮 connect-magic: File Type Detection API**
+
+#### **File Analysis**
+```erlang
+%% Detect file type from file path
+-spec detect_file(Filepath :: binary()) -> 
+    {ok, #{mime_type := binary(), encoding := binary()}} | {error, term()}.
+-spec detect_file(Filepath :: binary(), Options :: map()) -> 
+    {ok, map()} | {error, term()}.
+
+%% Detect from binary data
+-spec detect_buffer(Data :: binary()) -> 
+    {ok, #{mime_type := binary(), encoding := binary()}} | {error, term()}.
+
+%% Examples:
+{ok, #{mime_type := <<"application/pdf">>}} = connect_magic:detect_file(<<"document.pdf">>),
+{ok, #{mime_type := <<"image/jpeg">>}} = connect_magic:detect_buffer(ImageData).
+```
+
+#### **Specific Detection Functions**
+```erlang
+%% Get MIME type only
+-spec mime_type(FileOrData :: binary()) -> {ok, binary()} | {error, term()}.
+
+%% Get encoding information
+-spec encoding(FileOrData :: binary()) -> {ok, binary()} | {error, term()}.
+
+%% Check if compressed
+-spec compressed_type(FileOrData :: binary()) -> {ok, binary() | none} | {error, term()}.
+
+%% Examples:
+{ok, <<"application/pdf">>} = connect_magic:mime_type(<<"document.pdf">>),
+{ok, <<"utf-8">>} = connect_magic:encoding(<<"textfile.txt">>),
+{ok, <<"gzip">>} = connect_magic:compressed_type(<<"archive.gz">>).
+```
+
+#### **Statistics & Monitoring**
+```erlang
+%% Get processing statistics
+-spec statistics() -> #{
+    files_processed := non_neg_integer(),
+    mime_types_seen := [binary()],
+    average_processing_time := float()
+}.
+
+%% Get statistics as JSON
+-spec statistics_json() -> binary().
+
+%% Configuration information  
+-spec config_json() -> binary().
+
+%% Examples:
+Stats = connect_magic:statistics(),
+JsonStats = connect_magic:statistics_json(),
+Config = connect_magic:config_json().
+```
+
+---
+
+## ⚙️ **Integration Patterns**
+
+### **Using BEAM Files in Production**
+
+#### **1. Application Integration**
+```erlang
+% my_app.app.src
+{application, my_app, [
+    {description, "My Application using Connect-Libs"},
+    {vsn, "1.0.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        connect_phone,    % Phone validation
+        connect_mongodb,  % Database operations (optional)
+        connect_search,   % Search functionality (optional)
+        connect_magic     % File handling (optional)
+    ]},
+    {mod, {my_app, []}},
+    {env, [
+        {phone_validation_enabled, true},
+        {mongodb_pool_size, 10},
+        {search_enabled, false}
+    ]}
+]}.
+```
+
+#### **2. Supervised Service Pattern**
+```erlang
+% my_app_sup.erl - Main supervisor
+init([]) ->
+    SupFlags = #{
+        strategy => one_for_one,
+        intensity => 10,
+        period => 60
+    },
+    
+    Children = [
+        % Phone validation service  
+        #{
+            id => phone_service,
+            start => {phone_service, start_link, []},
+            restart => permanent,
+            shutdown => 5000,
+            type => worker,
+            modules => [phone_service]
+        },
+        
+        % User management service
+        #{
+            id => user_service, 
+            start => {user_service, start_link, []},
+            restart => permanent,
+            shutdown => 5000,
+            type => worker,
+            modules => [user_service]
+        }
+    ],
+    
+    {ok, {SupFlags, Children}}.
+```
+
+#### **3. Service Implementation Examples**
+```erlang
+% phone_service.erl - Phone validation service
+-module(phone_service).
+-behaviour(gen_server).
+
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+%% Validate and normalize phone number for account creation
+validate_for_account(PhoneNumber) ->
+    gen_server:call(?MODULE, {validate_account, PhoneNumber}).
+
+%% Handle validation requests
+handle_call({validate_account, PhoneNumber}, _From, State) ->
+    case connect_phone:normalize_account_id(PhoneNumber) of
+        {ok, AccountId} ->
+            % Get additional info
+            JsonInfo = connect_phone:get_phone_info_json(AccountId),
+            Response = {ok, #{
+                account_id => AccountId,
+                phone_info => json:decode(JsonInfo),
+                validated_at => erlang:system_time(second)
+            }},
+            {reply, Response, State};
+        {error, Reason} ->
+            {reply, {error, Reason}, State}
+    end.
+```
+
+### **Command Line Tools**
+
+#### **Development Testing**
+```bash
+# Test phone number validation
+erl -pa _build/default/lib/*/ebin \
+    -eval "application:ensure_all_started(connect_phone), \
+           Result = connect_phone:normalize_account_id(<<\"+1-555-123-4567\">>), \
+           io:format(\"Result: ~p~n\", [Result]), \
+           init:stop()."
+
+# Test MongoDB connection  
+erl -pa _build/default/lib/*/ebin \
+    -eval "application:ensure_all_started(connect_mongodb), \
+           Config = #{host => <<\"localhost\">>, port => 27017}, \
+           Result = connect_mongodb:connect(Config), \
+           io:format(\"MongoDB: ~p~n\", [Result]), \
+           init:stop()."
+
+# Test file detection
+erl -pa _build/default/lib/*/ebin \
+    -eval "application:ensure_all_started(connect_magic), \
+           Result = connect_magic:detect_file(<<\"test.pdf\">>), \
+           io:format(\"Detection: ~p~n\", [Result]), \
+           init:stop()."
+```
+
+#### **Production Deployment**
+```bash
+# Create production release
+rebar3 as prod tar
+
+# Run with specific BEAM paths
+erl -pa _build/prod/lib/*/ebin \
+    -boot start_sasl \
+    -config sys.config \
+    -s my_app
+
+# Check library versions
+erl -pa _build/default/lib/*/ebin \
+    -eval "application:load(connect_phone), \
+           {ok, Vsn} = application:get_key(connect_phone, vsn), \
+           io:format(\"connect-phone version: ~s~n\", [Vsn]), \
+           init:stop()."
 ```
 
 ---
