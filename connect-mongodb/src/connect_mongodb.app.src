@@ -1,6 +1,6 @@
 {application, connect_mongodb, [
     {description, "ConnectPlatform MongoDB Driver - Modern, OTP 27 Compatible"},
-    {maintainers, ["ConnectPlatform Team"]},
+    {maintainers, ["Sonoratek LLC <team@sonoratek.com>"]},
     {licenses, ["MIT"]},
     {links,[{"Github","https://github.com/connectplatform/connect-libs"}]},
     {vsn, "1.0.0"},

@@ -1,0 +1,20 @@
+{application, connect_phone, [
+    {description, "Connect Platform Phone Number Validation - Pure Erlang Implementation"},
+    {vsn, "1.0.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {env, [
+        {default_region, <<"US">>},
+        {account_id_format, e164}
+    ]},
+    {modules, []},
+    {maintainers, ["Connect Platform Team"]},
+    {licenses, ["Apache 2.0"]},
+    {links, [
+        {"GitHub", "https://github.com/connectplatform/connect-libs"},
+        {"Documentation", "https://docs.connect.platform"}
+    ]}
+]}. 

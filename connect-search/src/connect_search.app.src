@@ -1,24 +1,48 @@
 {application, connect_search, [
-    {description, "ConnectPlatform Elasticsearch Client - Modern, OTP 27 Compatible"},
-    {maintainers, ["ConnectPlatform Team"]},
-    {licenses, ["MIT"]},
-    {links,[{"Github","https://github.com/connectplatform/connect-libs"}]},
-    {vsn, "1.0.0"},
-    {registered, [connect_search_sup, connect_search_pool_sup]},
-    {applications, [kernel, stdlib, ssl, crypto, hackney, poolboy]},
+    {description, "ConnectPlatform Elasticsearch - OTP 27 Enhanced Modern Client"},
+    {vsn, "2.0.0"},
+    {registered, [
+        connect_search_sup,
+        connect_search_connection_sup,
+        connect_search_worker_sup
+    ]},
+    {applications, [
+        kernel,
+        stdlib,
+        inets,
+        ssl,
+        crypto,
+        public_key
+    ]},
     {mod, {connect_search_app, []}},
     {env, [
-        {default_pool_size, 10},
-        {default_timeout, 5000},
-        {default_scheme, <<"http">>}
+        {default_connection, #{
+            host => <<"localhost">>,
+            port => 9200,
+            scheme => <<"http">>,
+            timeout => 5000,
+            pool_size => 10,
+            max_overflow => 5
+        }},
+        {connection_pools, #{
+            primary => #{size => 10, max_overflow => 5},
+            secondary => #{size => 5, max_overflow => 2}
+        }},
+        {max_workers, 25},
+        {worker_timeout, 30000},
+        {monitoring_enabled, true},
+        {health_check_interval, 30000},
+        {circuit_breaker, #{
+            failure_threshold => 5,
+            recovery_timeout => 30000,
+            half_open_max_calls => 3
+        }}
     ]},
-
-    {files, [
-        "rebar.config",
-        "include/*.hrl",
-        "src/*.erl",
-        "test/*.erl",
-        "README*",
-        "LICENSE*"
+    {modules, []},
+    {maintainers, ["ConnectPlatform Team"]},
+    {licenses, ["Apache 2.0"]},
+    {links, [
+        {"GitHub", "https://github.com/connectplatform/connect-libs"},
+        {"Documentation", "https://docs.connect.platform"}
     ]}
 ]}. 

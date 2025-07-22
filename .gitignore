@@ -1,0 +1,16 @@
+_build/
+*.beam
+erl_crash.dump
+rebar3.crashdump
+.rebar3
+deps/
+.eunit
+logs/
+_checkouts/
+.rebar/
+*initial_warnings.txt
+*final_warnings.txt
+*dialyzer_progress.txt
+*current_warnings.txt
+debug_test.beam
+magic_*_warnings.txt
